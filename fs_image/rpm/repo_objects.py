@@ -150,3 +150,6 @@ class RepoMetadata(NamedTuple):
 
     def best_checksum(self) -> Checksum:
         return self.checksum
+
+    def __repr__(self):
+        return f'RepoMetadata(fetch_timestamp: {self.fetch_timestamp}, checksum: {self.checksum}, size: {self.size}, build_timestamp: {self.build_timestamp}'
