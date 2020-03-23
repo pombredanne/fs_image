@@ -117,11 +117,9 @@ def _download_repodata(
                     rpms.extend(rpm_parser.feed(chunk))
                 except Exception as ex:
                     raise RepodataParseError((repodata.location, ex))
-
         # Must commit the output context to get a storage_id.
         if outfile:
             return DownloadRepodataReturnType(repodata, True, outfile.commit(), rpms)
-
     # The primary repodata was already stored, and we just parsed it for RPMs.
     assert storage_id is not None
     return DownloadRepodataReturnType(repodata, False, storage_id, rpms)
@@ -133,10 +131,7 @@ def _download_repodatas(
     rpms = None  # We'll extract these from the primary repodata
     storage_id_to_repodata = {}  # Newly stored **and** pre-existing
     repodata_table = RepodataTable()
-
     primary_repodata = pick_primary_repodata(repomd.repodatas)
-    log.debug(f"Found primary repo data: {primary_repodata}")
-
     log_size(f"`{repo.name}` repodata weighs", sum(rd.size for rd in repomd.repodatas))
     rw_db_conn = cfg.new_db_conn(readonly=False)
     with ThreadPoolExecutor(max_workers=cfg.threads) as executor:
@@ -175,9 +170,7 @@ def _download_repodatas(
                 # Convert to a set to work around buggy repodatas, which
                 # list the same RPM object twice.
                 rpms = frozenset(res.maybe_rpms)
-                # rpms = frozenset(res.maybe_rpms[:10])
                 log.debug(f"repo: {repo.name} has {len(rpms)} rpms")
-
             set_new_key(storage_id_to_repodata, storage_id, res.repodata)
     # It's possible that for non-primary repodatas we received errors when
     # downloading - in that case we store the error in the sqlite db, thus the

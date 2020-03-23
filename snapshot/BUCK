@@ -1,0 +1,30 @@
+load("//fs_image/bzl:oss_shim.bzl", "python_binary", "third_party")
+load("//fs_image/bzl:rpm_repo_snapshot.bzl", "rpm_repo_snapshot")
+
+rpm_repo_snapshot(
+    name = "fedora31",
+    repo_server_ports = (28472, 28473), 
+    rpm_installers = ("dnf",),
+    src = "fedora31",
+    storage = {
+        "bucket": "fs-image",
+        "key": "s3",
+        "kind": "s3",
+        "prefix": "fedora31",
+        "region": "us-west-2",
+    },
+)
+
+rpm_repo_snapshot(
+    name = "centos8",
+    repo_server_ports = (28474, 28475), 
+    rpm_installers = ("dnf",),
+    src = "centos8",
+    storage = {
+        "bucket": "fs-image",
+        "key": "s3",
+        "kind": "s3",
+        "prefix": "centos8",
+        "region": "us-west-2",
+    },
+)

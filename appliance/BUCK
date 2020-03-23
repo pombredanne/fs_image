@@ -1,52 +1,71 @@
 load("//fs_image/bzl:constants.bzl", "DO_NOT_USE_BUILD_APPLIANCE")                                      
 load("//fs_image/bzl:image.bzl", "image")
-load("//fs_image/bzl:rpm_repo_snapshot.bzl", "RPM_SNAPSHOT_BASE_DIR", "install_rpm_repo_snapshot")   
+load("//fs_image/bzl:rpm_repo_snapshot.bzl", "default_rpm_repo_snapshot_for", "install_rpm_repo_snapshot", "set_up_rpm_repo_snapshots")
+
+install_snapshots = [
+    set_up_rpm_repo_snapshots(),
+    install_rpm_repo_snapshot("//snapshot:fedora31"),
+    install_rpm_repo_snapshot("//snapshot:centos8"),
+    default_rpm_repo_snapshot_for(
+        "dnf", "//snapshot:centos8",
+    ),
+]
 
 image.layer(
-    name = "fedora31_build_appliance",
+    name = "build_appliance",
     features = [
-        image.mkdir("/", RPM_SNAPSHOT_BASE_DIR),
-        image.mkdir("/var/lib", "dnf"),
-        install_rpm_repo_snapshot(                                                                      
-            "//snapshot:fedora31",                                                      
-            make_default = True,
-        ),
+        # Note: need this because the yum_dnf_from_snapshot code can't deal
+        # with this directory not existing.
+        image.mkdir("/etc", "yum"),
         image.rpms_install([
+            # "btrfs-progs",
             "coreutils",
-            "dnf",
+            "dnf",  # For installing rpms
+            "iproute",
+            "net-tools",
+            "redhat-rpm-config",  # For building rpms
+            # "rpm-build",  # For building rpms
+            "rpm",  # For manipulating rpms
+            "rpm-build", # For building rpms
+            "rpm-sign",  # For signing rpms
+            "sudo",
         ]),
-    ],
+    ] + install_snapshots,
     build_opts = image.opts(
         build_appliance = ":host_build_appliance",
     ),
+    enable_boot_target = True,
 )
 
-image.layer(                                                                                            
-    name = "host_build_appliance",                                                                   
-    features = [                                                                                        
-        image.mkdir("/", "var"),                                                                        
-        image.mkdir("/var", "tmp"),                                                                     
-        image.mkdir("/var", "log"),                                                                     
-        image.mkdir("/var", "cache"),                                                                   
-        image.mkdir("/var/cache", "dnf"),                                                               
-        image.mkdir("/var", "lib/rpm"),                                                                 
-        image.mkdir("/var/lib", "dnf"),                                                                 
-        image.mkdir("/", RPM_SNAPSHOT_BASE_DIR),                                                        
-        install_rpm_repo_snapshot(                                                                      
-            "//snapshot:fedora31",
-            make_default = True,
-        ),                                                                                              
-    ] + [                                                                                               
-        image.host_dir_mount(source)                                                                    
-        for source in [                                                                                 
-            "/bin",                                                                                     
-            "/etc",                                                                                     
-            "/lib",                                                                                     
-            "/sbin",                                                                                    
-            "/usr",                                                                                     
-        ]                                                                                               
-    ],                                                                                                  
-    build_opts = image.opts(                                                                            
-        build_appliance = DO_NOT_USE_BUILD_APPLIANCE,                                                   
-    ),                                                                                                  
-) 
+image.package(
+    name = "build_appliance.sendstream.zst",
+    layer = ":build_appliance",
+)
+
+# Host Build appliance is needed to bootstrap a build appliance because installing rpms
+# requires the use of a build appliance.
+image.layer(
+    name = "host_build_appliance",
+    features = [
+        image.mkdir("/", "var"),
+        image.mkdir("/var", "tmp"),
+        image.mkdir("/var", "log"),
+        image.mkdir("/var", "cache"),
+        image.mkdir("/var/cache", "dnf"),
+        image.mkdir("/var", "lib"),
+        image.mkdir("/var/lib", "dnf"),
+        image.mkdir("/var/lib", "rpm"),
+    ] + [
+        image.host_dir_mount(source)
+        for source in [
+            "/bin",
+            "/etc",
+            "/lib",
+            "/sbin",
+            "/usr",
+        ]
+    ] + install_snapshots,
+    build_opts = image.opts(
+        build_appliance = DO_NOT_USE_BUILD_APPLIANCE,
+    ),
+)
