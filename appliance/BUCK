@@ -6,9 +6,6 @@ install_snapshots = [
     set_up_rpm_repo_snapshots(),
     install_rpm_repo_snapshot("//snapshot:fedora31"),
     install_rpm_repo_snapshot("//snapshot:centos8"),
-    default_rpm_repo_snapshot_for(
-        "dnf", "//snapshot:centos8",
-    ),
 ]
 
 image.layer(
@@ -18,21 +15,22 @@ image.layer(
         # with this directory not existing.
         image.mkdir("/etc", "yum"),
         image.rpms_install([
-            # "btrfs-progs",
+            "btrfs-progs",
             "coreutils",
             "dnf",  # For installing rpms
             "iproute",
             "net-tools",
+            "python3",
             "redhat-rpm-config",  # For building rpms
-            # "rpm-build",  # For building rpms
             "rpm",  # For manipulating rpms
-            "rpm-build", # For building rpms
-            "rpm-sign",  # For signing rpms
+            # "rpm-build", # For building rpms
+            # "rpm-sign",  # For signing rpms
             "sudo",
         ]),
     ] + install_snapshots,
     build_opts = image.opts(
         build_appliance = ":host_build_appliance",
+        rpm_repo_snapshot = "//snapshot:fedora31",
     ),
     enable_boot_target = True,
 )

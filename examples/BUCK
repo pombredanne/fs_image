@@ -1,0 +1,29 @@
+load("//fs_image/bzl:image.bzl", "image")
+
+image.layer(
+    name = "fedora31-base",
+    features = [
+        image.rpms_install([
+            "basesystem",
+            "btrfs-progs",
+            "rpm",
+        ]),
+    ],
+    build_opts = image.opts(
+        rpm_repo_snapshot = "//snapshot:fedora31",
+    )
+)
+
+image.layer(
+    name = "centos8-base",
+    features = [
+        image.rpms_install([
+            "basesystem",
+            "dnf",
+            "python3",
+        ]),
+    ],
+    build_opts = image.opts(
+        rpm_repo_snapshot = "//snapshot:centos8",
+    )
+)
